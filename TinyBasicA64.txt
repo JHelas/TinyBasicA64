@@ -1,0 +1,135 @@
+
+TinyBASIC interpreter for aarch64 / ARM V8 Linux systems (October 2021)
+-----------------------------------------------------------------------
+
+- adapted from TinyBASIC of Z1013 (my first computer) which was based on PATB by Li-Chen Wang
+- interpreter written in 100% assembler for compact code
+- all values are 64bit signed (like the original version the lowest negative number (here -9223372036854775808) could not be converted)
+- abbrevation of keywords by '.' is supported
+- concatenation of statements with ';' is supported
+- RUN and LIST can be broken with control+c
+- some commands and functions marked as optional could be activated by compiler parameter
+- the program assumes a 8KByte RAM machine with more than 6KBytes memory free for program (the stack memory not in count)
+- basic lines are stored with <8_byte_binary_line_number>text<NL> in memory
+- for general documentation please use the net
+
+
+Compiling 
+---------
+
+as -o TinyBasicA64.o TinyBasicA64.s
+ld -s -o TinyBasicA64 TinyBasicA64.o
+sstrip TinyBASICA64
+
+- to include the optional commands insert -defsym EXTENSIONS=1 behind as
+- to enable a runtime output insert -defsym BENCH=1 behind as
+- to optimize the binary use sstrip (made by Brian Raiter / muppetlabs.com) - the binary is then 4652 bytes short!
+
+
+Program start
+-------------
+
+TinyBasicA64 [basicprogram.bas]
+
+
+
+Tiny description
+----------------
+
+Variables:            A ... Z, @(0) ... @(127)
+Logical operators:    = # >= > <= <
+Operators:            +, -, *, /
+Strings:              "string" or 'string'
+
+
+Commands for direct mode
+------------------------
+
+LIST [line_number]    - list program, if line number is given 20 lines otherwise the whole program
+
+RUN                   - start the program
+
+NEW                   - "delete" the program
+
+BYE                   - leave the interpreter
+
+END                   - change end of used memory (not supported / optional)
+
+SAVE "name"           - save the program
+
+LOAD "name"           - load a program
+
+
+Commands for program mode
+-------------------------
+
+LET var = expr        - assignment, LET can be omitted - the fasted variant (in program mode) is to use the . e.g. .A=1
+
+IF expr log_op expr cmd
+                      - conditional execution
+
+GOTO expr             - jump to line number
+
+GOSUB expr            - execute subroutine
+
+RETURN                - return from subroutine
+
+NEXT var              - next loop for FOR
+
+REM                   - comment line
+
+FOR var=expr TO expr [STEP expr]
+                      - repeat program between FOR and NEXT
+
+INPUT string | var, ...
+                      - input values
+
+PRINT string | #expr | expr, ... [,]
+                      - print strings and expression
+                          use #expr to set output size of following expressions
+
+STOP                  - finish program mode
+
+OUTCHAR (expr) | expr
+                      - print a char
+
+Optional commands
+
+O$(expr)              - output string read with I$
+
+I$(expr)              - read a string and store him behind program
+
+TAB(expr)             - print a bunch of blanks
+
+BYTE(expr)            - print expr hexadecimal with 2 chars
+
+WORD(expr)            - print expr hexadecimal with 4 chars
+
+
+Functions
+---------
+
+RND(expr)             - returns a random number between 1 and the given value (including) if the 
+                          value is greater than 0 otherwise a random number
+
+ABS(expr)             - returns the absolute value of the expression
+
+SIZE                  - returns the free program size in bytes
+
+TOP                   - returns the "memory address" of the program end
+
+INCHAR                - returns a char read from the keyboard without echo (known as INKEY or getch)
+
+
+Optional functions
+
+HEX(hex_string)     - converts a hexadecimal string in to a value
+
+LEN                 - returns the length of string last read by I$
+
+
+Issues
+------
+
+- It is possible to press control-c during SAVE
+- Write errors during SAVE will not be reported
