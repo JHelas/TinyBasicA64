@@ -100,7 +100,6 @@ NEW_LINE:	.ascii	"\n"
 BOOT_M_LEN		= . - BOOT_MSG
 PROMPT:		.ascii	"READY\n"
 PROMPT1:	.ascii	">"
-BREAK_MSG:	.ascii	"BREAK IN "	// Blank is reused !
 E_WHAT:		.ascii	"WHAT?\n"
 E_HOW:		.ascii	"HOW?\n"
 E_SORRY:	.ascii	"SORRY\n"
@@ -403,7 +402,7 @@ ErrExt:					// In run mode print line with '?' on error
 	call	PrintNumber
 					// Print space
 	mov	x0, STDOUT
-	adr	x1, BREAK_MSG + 5	// Blank
+	adr	x1, BOOT_MSG + 5	// Blank
 	mov	x2,  1			// Length
 	svc	0
 					// Print code before error
@@ -878,28 +877,15 @@ CmdRUN:
 CmdRUN0:
 	cmp	x20, TOP		// TOP ?
 	bge	WarmStart
+	add	x20, x20, 8		// Jump over line number
+CmdRUN1:
 	adr	x8, BreakFlag
 	ldr	x9, [x8]
-	cbnz	x9, Break		// CTRL+C pressed ?
-	add	x20, x20, 8		// Jump over line number
+	cbnz	x9, WarmStart		// CTRL+C pressed ?
 	mov	x27, x20		// Save start of line for error message
-CmdRUN1:
+CmdRUN2:
 	call	ExecLine1		// Execute the line
 	b	CmdRUN0
-
-Break:
-	mov	x0, STDOUT
-	adr	x1, BREAK_MSG
-	mov	x2, 9			// Length
-	mov	x8, WRITE
-	svc	0
-	mov	x10, STDOUT
-	ldur	x21, [x27, -8]
-	mov	x24, 4
-	bl	PrintNumber
-	mov	x21, 0x0A
-	bl	PrintChar
-	b	WarmStart
 
 
 ///////////////////////////////////////////////////////////
@@ -1006,8 +992,8 @@ CmdGOTO:
 	cmp	w15, 0x0a
 	bne	ErrWHAT
 	call	FindLineExact
-	ldr	x30, [sp], 16		// Cleanup ret
-	b	ExecLine1
+	add	sp, sp, 32		// Cleanup ret's
+	b	CmdRUN1
 
 
 ///////////////////////////////////////////////////////////
@@ -1020,7 +1006,7 @@ CmdGOSUB:
 	mov	x21, GOSUB_MARK
 	push	x21			// Save mark
 	call	IncStackCounter
-	b	CmdRUN1
+	b	CmdRUN2
 
 
 ///////////////////////////////////////////////////////////
