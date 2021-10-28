@@ -884,7 +884,7 @@ CmdRUN1:
 	cbnz	x9, WarmStart		// CTRL+C pressed ?
 	mov	x27, x20		// Save start of line for error message
 CmdRUN2:
-	call	ExecLine1		// Execute the line
+	bl	ExecLine1		// Execute the line
 	b	CmdRUN0
 
 
@@ -992,7 +992,7 @@ CmdGOTO:
 	cmp	w15, 0x0a
 	bne	ErrWHAT
 	call	FindLineExact
-	add	sp, sp, 32		// Cleanup ret's
+	ldr	x30, [sp], 16
 	b	CmdRUN1
 
 
@@ -1016,7 +1016,7 @@ CmdRETURN:
 	call	SkipBlanks
 	cmp	w15, 0x0A
 	bne	ErrWHAT
-	add	sp, sp, 32		// Dismiss return addresses
+	add	sp, sp, 16		// Dismiss return address
 	mov	x8, STACK_COUNTER.D[0]
 	cbz	x8, ErrWHAT
 	sub	x8, x8, 1
@@ -1044,8 +1044,8 @@ CmdREM:
 //
 CmdFOR:
 	call	SkipBlanks
-	call	CmdLET			// x22 - pointer to var
-	mov	x4, x22
+	call	CmdLET			// x25 - pointer to var
+	mov	x4, x25
 	adr	x18, ForToList
 	b	FindFunction
 
@@ -1069,7 +1069,7 @@ ForDefaultStep1:
 	pop	x6			// Save return
 	stp	x27, x20, [sp, -16]!	// Line pointer and position in line
 	stp	x2, x3, [sp, -16]!	// TO and STEP
-	stp	x4, x5, [sp, -16]!	// Var and MARK
+	stp	x5, x4, [sp, -16]!	// Var and MARK
 	push	x6
 IncStackCounter:
 	mov	x8, STACK_COUNTER.D[0]
@@ -1092,11 +1092,9 @@ CmdNEXT:
 CmdNEXT1:
 	cbz	x9, ErrWHAT
 	mov	STACK_COUNTER.D[0], X9
-	ldp	x4, x5, [sp, 16]	// Restore mark and var
+	ldp	x5, x4, [sp, 16]	// Restore mark and var
 	cmp	x5, FOR_MARK
 	bne	ErrWHAT
-	ldp	x2, x3, [sp, 32]	// STEP and TO
-	ldp	x27, x1, [sp, 48]	// Line data
 	cmp	x4, x25
 	beq	CmdNEXT2
 	pop	x7			// Wrong FOR
@@ -1105,7 +1103,8 @@ CmdNEXT1:
 	bne	CmdNEXT1
 
 CmdNEXT2:				// FOR data found
-	mov	x20, x2
+	ldp	x20, x3, [sp, 32]	// STEP and TO
+	ldp	x27, x1, [sp, 48]	// Line data
 	call	EvalExpr0
 	ldr	x24, [x4]
 	cmp	x24, x21		// Last loop ?
@@ -1115,7 +1114,7 @@ CmdNEXT2:				// FOR data found
 	call	EvalExpr0		//  and
 CmdNEXT5:
 	add	x21, x24, x21		//  add to var
-	str	x21, [x4]		//  to var
+	str	x21, [x4]		//  store it
 	cbnz	x6, CmdNEXT9
 	mov	STACK_COUNTER.D[0], x9
 	ret
@@ -1520,7 +1519,7 @@ _return:
 FindLine:
 	adr	x20, ProgBuff
 FindLine1:
-	cmp	x20, TOP		// TOP ?
+	cmp	x20, TOP		// TOP reached ?
 	bge	_return
 	ldr	x16, [x20]
 	cmp	x21, x16
@@ -1550,7 +1549,7 @@ FindLineExact:
 	mov	x17, x20
 	mov	x20, x27
 	cbz	x20, FindLineExact0
-	ldr	x16, [x20]		// Current line number
+	ldr	x16, [x20, -8]!		// Current line number
 	cmp	x21, x16
 	bgt	FindLineExact1
 FindLineExact0:
