@@ -82,7 +82,7 @@ FOR var=expr TO expr [STEP expr]
                       - repeat program between FOR and NEXT
 
 INPUT string | var, ...
-                      - input values
+                      - input values, print strings
 
 PRINT string | #expr | expr, ... [,]
                       - print strings and expression

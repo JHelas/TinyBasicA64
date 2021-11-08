@@ -1117,6 +1117,9 @@ CmdNEXT5:
 	str	x21, [x4]		//  store it
 	cbnz	x6, CmdNEXT9
 	mov	STACK_COUNTER.D[0], x9
+	adr	x8, BreakFlag
+	ldr	x9, [x8]
+	cbnz	x9, WarmStart		// CTRL+C pressed ?
 	ret
 
 CmdNEXT6:				// Cleanup GOSUB data
@@ -1173,7 +1176,16 @@ CmdINPUT2:
 					// Convert
 	push	x20
 	mov	x20, x1
-	call	TestNumber
+	call SkipBlanks
+	mov	x1, 1
+	cmp	x15, '+'
+	beq	CmdINPUT3
+	cmp	x15, '-'
+	sub	x1, x1, 2
+CmdINPUT3:
+	add	x20, x20, 1
+	call TestNumber
+	mul	x21, x21, x1
 	str	x21, [x25]
 	pop	x20
 CmdINPUT7:
