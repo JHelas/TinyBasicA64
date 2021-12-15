@@ -1178,12 +1178,10 @@ CmdINPUT2:
 	mov	x20, x1
 	call SkipBlanks
 	mov	x1, 1
-	cmp	x15, '+'
-	beq	CmdINPUT3
 	cmp	x15, '-'
+	cneg	x1, x1, eq
+	cinc	x20, x20, le
 	sub	x1, x1, 2
-CmdINPUT3:
-	add	x20, x20, 1
 	call TestNumber
 	mul	x21, x21, x1
 	str	x21, [x25]
