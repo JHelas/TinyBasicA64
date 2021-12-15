@@ -1181,7 +1181,6 @@ CmdINPUT2:
 	cmp	x15, '-'
 	cneg	x1, x1, eq
 	cinc	x20, x20, le
-	sub	x1, x1, 2
 	call TestNumber
 	mul	x21, x21, x1
 	str	x21, [x25]
